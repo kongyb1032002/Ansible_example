@@ -1,5 +1,1 @@
 nginx_port: 8080
-mysql_root_password: rootpassword
-mysql_user: user
-mysql_user_password: userpassword
-mysql_db: newdb
