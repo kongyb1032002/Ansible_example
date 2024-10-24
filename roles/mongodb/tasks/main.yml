@@ -1,0 +1,37 @@
+---
+# tasks file for roles/mongodb
+- name: Install MongoDB comunity edition
+  apt:
+     name:
+        - gnupg
+        - curl
+
+- name: Download mongodb apt package
+  get_url:
+     url: https://www.mongodb.org/static/pgp/server-8.0.asc
+     dest: /tmp/mongodb-server-8.0.asc
+     mode: "0644"
+
+- name: Convert MongoDB PGP key to GPG format and move to /usr/share/keyrings
+  command:
+     cmd: "gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor /tmp/mongodb-server-8.0.asc"
+
+- name: Remove temporary PGP key file
+  file:
+     path: /tmp/mongodb-server-8.0.asc
+     state: absent
+
+- name: Create list file
+  shell: |
+     echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+  args:
+     executable: /bin/bash
+
+- name: Reload package database
+  apt:
+     update_cache: yes
+
+- name: Install MongoDB Comunity Server
+  apt:
+     name:
+        - mongodb-org

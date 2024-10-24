@@ -1,0 +1,46 @@
+---
+- name: Test MySQL Installation and Configuration
+  hosts: all
+  gather_facts: no
+  tasks:
+     - name: Check if MySQL is installed
+       command: mysql --version
+       register: mysql_version
+       failed_when: mysql_version.rc != 0
+
+     - name: Verify MySQL service is running
+       service:
+          name: mysql
+          state: started
+       register: mysql_service
+       failed_when: mysql_service.state != 'started'
+
+     - name: Check if root user can log in
+       command: mysql -u root -p{{ mysql_root_password }} -e "SELECT 'Root user is accessible';"
+       register: root_login
+       failed_when: root_login.rc != 0
+
+     - name: Check if the new MySQL user is created
+       command: mysql -u root -p{{ mysql_root_password }} -e "SELECT User FROM mysql.user WHERE User='{{ mysql_user }}';"
+       register: new_user_check
+       failed_when: new_user_check.rc != 0 or "'{{ mysql_user }}'" not in new_user_check.stdout
+
+     - name: Check if the new database is created
+       command: mysql -u root -p{{ mysql_root_password }} -e "SHOW DATABASES LIKE '{{ mysql_db }}';"
+       register: database_check
+       failed_when: database_check.rc != 0 or "'{{ mysql_db }}'" not in database_check.stdout
+
+     - name: Check privileges for new user on the new database
+       command: mysql -u root -p{{ mysql_root_password }} -e "SHOW GRANTS FOR '{{ mysql_user }}'@'%';"
+       register: user_privileges
+       failed_when: user_privileges.rc != 0 or '{{ mysql_db }}.*:ALL' not in user_privileges.stdout
+
+     - name: Display test results
+       debug:
+          msg: |
+             MySQL Version: {{ mysql_version.stdout }}
+             MySQL Service State: {{ mysql_service.state }}
+             Root Login Successful: {{ root_login.stdout }}
+             New User Exists: {{ new_user_check.stdout }}
+             New Database Exists: {{ database_check.stdout }}
+             User Privileges: {{ user_privileges.stdout }}

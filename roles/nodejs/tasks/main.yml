@@ -1,0 +1,47 @@
+---
+# tasks file for roles/nodejs
+- name: Install curl
+  apt:
+     name: curl
+     state: present
+     update_cache: yes
+
+- name: Install NVM
+  shell: |
+     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
+  args:
+     executable: /bin/bash
+  environment:
+     HOME: "{{ ansible_env.HOME }}"
+
+- name: Load NVM
+  shell: |
+     export NVM_DIR="{{ ansible_env.HOME }}/.nvm" && \
+     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
+     nvm install {{ node_version }}
+  args:
+     executable: /bin/bash
+
+- name: Install yarn
+  shell: |
+     export NVM_DIR="{{ ansible_env.HOME }}/.nvm" && \
+     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
+     npm install -g yarn
+  args:
+     executable: /bin/bash
+
+- name: Check Node.js version
+  shell: |
+     export NVM_DIR="{{ ansible_env.HOME }}/.nvm" && \
+     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
+     node -v
+  args:
+     executable: /bin/bash
+
+- name: Check npm version
+  shell: |
+     export NVM_DIR="{{ ansible_env.HOME }}/.nvm" && \
+     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
+     npm -v
+  args:
+     executable: /bin/bash

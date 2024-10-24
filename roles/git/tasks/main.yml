@@ -1,0 +1,12 @@
+---
+# tasks file for roles/git
+- name: Update apt repo cache
+  apt:
+     name: git
+     state: present
+     update_cache: yes
+- name: Git version
+  shell: |
+     git --version
+  args:
+     executable: /bin/bash

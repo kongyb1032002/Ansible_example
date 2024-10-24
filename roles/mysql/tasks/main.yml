@@ -1,0 +1,74 @@
+---
+# tasks file for roles/mysql
+- name: Update package index
+  apt:
+     update_cache: yes
+
+- name: Install pip
+  apt:
+     name: python3-pip
+     state: present
+
+- name: Install PyMySQL
+  pip:
+     name: pymysql
+     state: present
+
+- name: Install mysql-server
+  apt:
+     name:
+        - mysql-server
+- name: Start mysql-server
+  service:
+     name: mysql
+     state: started
+     enabled: yes
+
+- name: Set mysql root password
+  mysql_user:
+     name: root
+     password: "{{ mysql_root_password }}"
+     host: localhost
+     login_user: root
+     login_password: "rootpassword"
+     state: present
+
+- name: Remove anonymous users
+  mysql_user:
+     name: ""
+     login_user: root
+     login_password: "{{mysql_root_password}}"
+     host: localhost
+     state: absent
+
+- name: Create new Mysql user
+  mysql_user:
+     name: "{{mysql_user}}"
+     password: "{{mysql_user_password}}"
+     login_user: root
+     login_password: "{{mysql_root_password}}"
+
+- name: Grant privileges to the new user
+  mysql_user:
+     login_user: root
+     login_password: "{{mysql_root_password}}"
+     name: "{{mysql_user}}"
+     host: "%"
+     priv: "*.*:ALL"
+     state: present
+
+- name: Create new database
+  mysql_db:
+     login_user: root
+     login_password: "{{mysql_root_password}}"
+     name: "{{ mysql_db }}"
+     state: present
+
+- name: Grant all privileges on the new database to the user
+  mysql_user:
+     login_user: root
+     login_password: "{{mysql_root_password}}"
+     name: "{{mysql_user}}"
+     host: "%"
+     priv: "{{mysql_db}}.*:ALL"
+     state: present

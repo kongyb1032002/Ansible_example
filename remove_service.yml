@@ -1,0 +1,109 @@
+---
+- name: Remove services and packages
+  hosts: db
+  become: yes
+  tasks:
+     # Gather service facts
+     - name: Gather service facts
+       service_facts:
+
+     # Remove MySQL
+     - name: Stop MySQL service
+       service:
+          name: mysql
+          state: stopped
+       when: "'mysql' in services and services['mysql'].state == 'running'"
+
+     - name: Remove MySQL packages
+       apt:
+          name:
+             - mysql-server
+             - mysql-client
+             - mysql-common
+             - mysql-server-core-* # Nếu có, tùy thuộc vào phiên bản
+             - mysql-client-core-* # Nếu có, tùy thuộc vào phiên bản
+          state: absent
+          purge: yes # Xóa cấu hình và file liên quan
+
+     # Remove Docker
+     - name: Stop Docker service
+       service:
+          name: docker
+          state: stopped
+       when: "'docker' in services and services['docker'].state == 'running'"
+
+     - name: Remove Docker packages
+       apt:
+          name:
+             - docker-ce
+             - docker-ce-cli
+             - containerd.io
+             - docker-buildx-plugin
+             - docker-compose-plugin
+          state: absent
+          purge: yes # Remove configuration files as well
+
+     - name: Update apt repository after removal
+       apt:
+          update_cache: yes
+          state: present
+
+     # Remove Git
+     - name: Stop Git service
+       service:
+          name: git
+          state: stopped
+       when: "'git' in services and services['git'].state == 'running'"
+
+     - name: Remove Git package
+       apt:
+          name: git
+          state: absent
+          purge: yes # Xóa cả các file cấu hình (nếu có)
+
+     - name: Update apt repo cache after removal
+       apt:
+          update_cache: yes
+
+     # Remove Nginx
+     - name: Stop Nginx service
+       service:
+          name: nginx
+          state: stopped
+       when: "'nginx' in services and services['nginx'].state == 'running'"
+
+     - name: Remove Nginx
+       apt:
+          name: nginx
+          state: absent
+          purge: yes # Xóa cả các file cấu hình (nếu có)
+
+     - name: Open firewall port (if needed)
+       ufw:
+          rule: allow
+          port: "{{ nginx_port }}"
+       when: ansible_distribution == "Ubuntu" # Kiểm tra hệ điều hành
+
+     # Tasks file for roles/nodejs-remove
+     - name: Remove Node.js and NVM
+       shell: |
+          if [ -d "{{ ansible_env.HOME }}/.nvm" ]; then
+            rm -rf {{ ansible_env.HOME }}/.nvm
+          fi
+       args:
+          executable: /bin/bash
+
+     - name: Remove curl
+       apt:
+          name: curl
+          state: absent
+
+     - name: Remove any remaining Node.js packages
+       apt:
+          name: nodejs
+          state: absent
+
+     - name: Clean up apt cache
+       apt:
+          autoremove: yes
+          autoclean: yes

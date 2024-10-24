@@ -1,0 +1,55 @@
+---
+- name: Test Nginx Installation and Configuration
+  hosts: your_target_hosts # Thay thế bằng nhóm hoặc địa chỉ IP của máy chủ bạn muốn kiểm tra
+  tasks:
+     - name: Check if Nginx is installed
+       command: nginx -v
+       register: nginx_version
+       ignore_errors: yes
+
+     - name: Assert Nginx is installed
+       assert:
+          that:
+             - nginx_version.rc == 0
+          fail_msg: "Nginx is not installed!"
+
+     - name: Check Nginx service status
+       service_facts:
+
+     - name: Assert Nginx service is running
+       assert:
+          that:
+             - ansible_facts.services['nginx.service'] == 'running'
+          fail_msg: "Nginx service is not running!"
+
+     - name: Check Nginx configuration
+       command: nginx -t
+       register: nginx_config_test
+       ignore_errors: yes
+
+     - name: Assert Nginx configuration is valid
+       assert:
+          that:
+             - nginx_config_test.rc == 0
+          fail_msg: "Nginx configuration is invalid!"
+
+     - name: Check if the reverse proxy configuration file exists
+       stat:
+          path: /etc/nginx/sites-available/reverse-proxy
+       register: reverse_proxy_config
+
+     - name: Assert reverse proxy configuration file exists
+       assert:
+          that:
+             - reverse_proxy_config.stat.exists
+          fail_msg: "Reverse proxy configuration file does not exist!"
+
+     - name: Check firewall status for Nginx port
+       command: sudo ufw status
+       register: ufw_status
+
+     - name: Assert Nginx port is allowed in firewall
+       assert:
+          that:
+             - "'{{ nginx_port }}' in ufw_status.stdout"
+          fail_msg: "Nginx port is not allowed in firewall!"

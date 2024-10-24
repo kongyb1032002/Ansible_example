@@ -1,0 +1,17 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+     - name: Ping server
+       ping:
+  roles:
+     - nginx
+     - git
+     - nodejs
+
+- hosts: db
+  become: yes
+  roles:
+     - docker
+     - mysql
+     #  - mongodb

@@ -1,0 +1,38 @@
+---
+# tasks file for roles/nginx
+- name: Update apt repository
+  apt:
+     update_cache: yes
+
+- name: Install and setup nginx
+  apt:
+     name: nginx
+     state: present
+
+- name: Config Nginx reverse proxy
+  template:
+     src: nginx.reverse-proxy.j2
+     dest: /etc/nginx/sites-available/reverse-proxy
+  notify: Reload Nginx
+
+- name: Enable site configuration
+  command: nginx -t # Kiểm tra cấu hình Nginx trước khi khởi động lại
+  register: nginx_config_test
+  ignore_errors: yes # Nếu có lỗi trong cấu hình, không làm dừng playbook
+
+- name: Restart Nginx if configuration is valid
+  service:
+     name: nginx
+     state: restarted
+  when: nginx_config_test.rc == 0 # Chỉ khởi động lại nếu cấu hình hợp lệ
+
+- name: Open firewall port
+  ufw:
+     rule: allow
+     port: "{{ nginx_port }}"
+
+- name: Ensure Nginx is running and enabled
+  service:
+     name: nginx
+     state: started
+     enabled: yes
